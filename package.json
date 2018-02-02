@@ -96,9 +96,6 @@
     "setup:config": "gulp createTravisOrmConfig",
     "package": "gulp package"
   },
-  "bin": {
-    "typeorm": "./cli.js"
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/typeorm",
