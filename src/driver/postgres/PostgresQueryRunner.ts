@@ -371,14 +371,28 @@ AND a.attnum = ANY(ix.indkey) AND t.relkind = 'r' AND t.relname IN (${tableNames
 JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
 JOIN information_schema.columns AS c ON c.table_schema = tc.constraint_schema AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
 where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString})`;
-        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys]: ObjectLiteral[][] = await Promise.all([
+        const enumValuesSql = `t.typname AS enum_name, e.enumlabel AS enum_value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace`;
+        const [dbTables, dbColumns, dbIndices, dbForeignKeys, dbUniqueKeys, primaryKeys, enumValues]: ObjectLiteral[][] = await Promise.all([
             this.query(tablesSql),
             this.query(columnsSql),
             this.query(indicesSql),
             this.query(foreignKeysSql),
             this.query(uniqueKeysSql),
             this.query(primaryKeysSql),
+            this.query(enumValuesSql),
         ]);
+
+        const enums =
+            enumValues.reduce<Map<string, string[]>>((enums, enumValue) => {
+                if (!enums.has(enumValue.enum_name)) {
+                    enums.set(enumValue.enum_name, []);
+                }
+                enums.get(enumValue.enum_name)!.push(enumValue.enum_value);
+                return enums;
+            }, new Map<string, string[]>());
 
         // if tables were not found in the db, no need to proceed
         if (!dbTables.length)
@@ -415,6 +429,12 @@ where constraint_type = 'PRIMARY KEY' AND c.table_schema IN (${schemaNamesString
                     tableColumn.charset = dbColumn["character_set_name"];
                     tableColumn.collation = dbColumn["collation_name"];
                     tableColumn.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
+
+                    if (tableColumn.type === "user_defined" && enums.has(dbColumn["udt_name"])) {
+                        tableColumn.type = "enum";
+                        tableColumn.enum = enums.get(dbColumn["udt_name"]);
+                    }
+
                     if (tableColumn.type === "array") {
                         tableColumn.isArray = true;
                         const type = dbColumn["udt_name"].substring(1);

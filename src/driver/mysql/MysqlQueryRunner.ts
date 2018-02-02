@@ -373,11 +373,11 @@ export class MysqlQueryRunner implements QueryRunner {
                     const endIndex = columnType.indexOf("(");
                     tableColumn.type = endIndex !== -1 ? columnType.substring(0, endIndex) : columnType;
 
-                    if (dbColumn["COLUMN_DEFAULT"] === null || dbColumn["COLUMN_DEFAULT"] === undefined 
+                    if (dbColumn["COLUMN_DEFAULT"] === null || dbColumn["COLUMN_DEFAULT"] === undefined
                         || (isMariaDb && dbColumn["COLUMN_DEFAULT"] === "NULL")) {
 
                         tableColumn.default = undefined;
-                    
+
                     } else {
                         tableColumn.default = dbColumn["COLUMN_DEFAULT"];
                     }
