@@ -1,6 +1,5 @@
 .vscode/
 .idea/
-build/
 coverage/
 node_modules/
 ormconfig.json
