@@ -382,7 +382,7 @@ JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace`;
                     tableColumn.collation = dbColumn["collation_name"];
                     tableColumn.isUnique = !!dbUniqueKeys.find(key => key["constraint_name"] ===  `uk_${dbColumn["table_name"]}_${dbColumn["column_name"]}`);
 
-                    if (tableColumn.type === "user_defined" && enums.has(dbColumn["udt_name"])) {
+                    if (tableColumn.type === "user-defined" && enums.has(dbColumn["udt_name"])) {
                         tableColumn.type = "enum";
                         tableColumn.enum = enums.get(dbColumn["udt_name"]);
                     }
